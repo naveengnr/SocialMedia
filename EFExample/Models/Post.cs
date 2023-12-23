@@ -9,7 +9,7 @@ public partial class Post
 
     public int? PostUserId { get; set; }
 
-    public string? Content { get; set; }
+    public string? PostContent { get; set; }
 
     public DateTime? DatePosted { get; set; }
 

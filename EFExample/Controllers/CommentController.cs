@@ -9,7 +9,7 @@ namespace EFExample.Controllers
 {
     [ApiController]
     [Route("api/[Controller]")]
-    //[Authorize]
+   // [Authorize]
     public class CommentController : ControllerBase
     {
         
@@ -42,17 +42,19 @@ namespace EFExample.Controllers
 
 
         [HttpGet("GetComments")]
-        public ActionResult GetComments(int CommentId)
+        public async Task<ActionResult> GetComments(int CommentId)
         {
-            var comments = _comments.GetComments(CommentId);
-            if(comments != null)
-            {
-                return Ok(comments);
-            }
-            else
-            {
-                return NotFound("CommentId NotFound");
-            }
+            
+                var comments = await _comments.GetComments(CommentId);
+                if (comments != null)
+                {
+                    return Ok(comments);
+                }
+                else
+                {
+                    return NotFound("CommentId NotFound");
+                }
+            
         }
         /// <summary>
         /// This API is For Update Comments
@@ -75,9 +77,9 @@ namespace EFExample.Controllers
         /// <response code="404">Returns when the user with the specified ID is not found.</response>
 
         [HttpPut("UpdateComments")]
-        public ActionResult UpdateComments(CommentUpdateDTO updateDTO)
+        public async Task<ActionResult> UpdateComments(CommentUpdateDTO updateDTO)
         {
-            var comments = _comments.UpdateComment(updateDTO);
+            var comments = await _comments.UpdateComment(updateDTO);
             if(comments != null)
             {
                 return Ok(comments);
@@ -113,13 +115,13 @@ namespace EFExample.Controllers
 
         [HttpPost("newComment")]
         [AllowAnonymous]
-        public ActionResult AddComment(CommentDTO comment)
+        public async Task<ActionResult> AddComment(CommentDTO comment)
         {
-            var comments = _comments.AddComment(comment);
+            var comments = await _comments.AddComment(comment);
 
             if(comments != null)
             {
-                return Ok( _comments.AddComment(comment));
+                return Ok( comments);
             }
             else
             {

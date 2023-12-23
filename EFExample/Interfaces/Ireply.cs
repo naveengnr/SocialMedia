@@ -4,8 +4,8 @@ namespace EFExample.Interfaces
 {
     public interface Ireply
     {
-        public string AddReply(ReplyDTO reply);
-        public List<ReplyGetDTO> GetReplies(int ReplyId);
-        public String UpdateReplies(ReplyUpdateDTO updateDTO);
+        public Task<string> AddReply(ReplyDTO reply);
+        public Task<List<ReplyGetDTO>> GetReplies(int ReplyId);
+        public Task<String> UpdateReplies(ReplyUpdateDTO updateDTO);
     }
 }

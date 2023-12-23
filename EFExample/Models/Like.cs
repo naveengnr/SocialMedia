@@ -15,5 +15,7 @@ public partial class Like
 
     public DateTime? DateLiked { get; set; }
 
+    public bool UnLike { get; set; }
+
     public virtual User? User { get; set; }
 }

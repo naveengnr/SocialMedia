@@ -3,78 +3,114 @@ using EFExample.DTO;
 using EFExample.Interfaces;
 using System.Threading.Tasks;
 using System;
+using EFExample.Email;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace EFExample.Service
 {
     public class ShareService : Ishare
     {
         public readonly SocialMediaContext _context;
-
-        public ShareService(SocialMediaContext context)
+        public readonly EmailService _emailService;
+        public readonly ILogger<ShareService> _logger;
+        public ShareService(SocialMediaContext context, EmailService emailService, ILogger<ShareService> logger)
         {
             _context = context;
+            _emailService = emailService;
+            _logger = logger;
         }
 
-        public List<ShareGetDTO> GetShares(int UserId = 0 , int PostId = 0)
+        /// <summary>
+        /// This method using for the Get the shares based on UserId  and PostId parameter
+        /// </summary>
+        public async Task<List<ShareGetDTO>> GetShares(int UserId = 0, int PostId = 0)
         {
-            IQueryable<Share> query = _context.Shares;
-
-            if (UserId > 0)
+            try
             {
-                 query = query.Where(e => e.UserId == UserId && e.IsDeleted == false);
-            }
-            else if(PostId > 0)
-            {
-                 query = query.Where(e => e.PostId == PostId && e.IsDeleted == false);
-            }
+                IQueryable<Share> query = _context.Shares;
 
-            var shares = query.ToList();
-
-            if (shares != null)
-            {
-                var share = shares.Select(e => new ShareGetDTO
+                if (UserId > 0)
                 {
-                    ShareId = e.ShareId,
-                    UserId = e.UserId,
-                    PostId = e.PostId,
-                    DateShared = e.DateShared
-                }).ToList();
+                    query = query.Where(e => e.UserId == UserId && e.IsDeleted == false);
+                }
+                else if (PostId > 0)
+                {
+                    query = query.Where(e => e.PostId == PostId && e.IsDeleted == false);
+                }
 
-                return share;
+                var shares = query.ToList();
+
+                if (shares != null)
+                {
+                    var share = shares.Select(e => new ShareGetDTO
+                    {
+                        ShareId = e.ShareId,
+                        UserId = e.UserId,
+                        PostId = e.PostId,
+                        DateShared = e.DateShared
+                    }).ToList();
+
+                    return share;
+                }
+                else
+                {
+                    return null;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return null;
+                _logger.LogError(ex.Message);
+
+                return new List<ShareGetDTO> { new ShareGetDTO { ErrorMessage = ex.Message } };
+
             }
         }
 
-        public string DeleteShare(int ShareId)
+        /// <summary>
+        /// This method using for the Delete the share based on ShareId parameter
+        /// </summary>
+        public async Task<string> DeleteShare(int ShareId)
         {
-            var share = _context.Shares.FirstOrDefault(e => e.ShareId == ShareId && e.IsDeleted == false);
+            try {
+                var share = _context.Shares.FirstOrDefault(e => e.ShareId == ShareId && e.IsDeleted == false);
 
-            if (share != null)
+                if (share != null)
+                {
+                    share.IsDeleted = true;
+
+                    await _context.SaveChangesAsync();
+
+                    return "Sucessfully Deleted";
+                }
+                else
+                {
+                    return null;
+                }
+            }catch(Exception ex)
             {
-                share.IsDeleted = true;
-
-                _context.SaveChanges();
-
-                return "Sucessfully Deleted";
+                _logger.LogError(ex.Message);
+                return ex.Message;
             }
-            else
-            {
-                return null;
             }
-        }
 
-
-        public String AddShare(ShareDTO share)
+        /// <summary>
+        /// This method using for the Adding the share based on share parameter
+        /// </summary>
+        public async Task<String> AddShare(ShareDTO share)
         {
-            bool Userexists = _context.Users.Any(e => e.UserId.Equals(share.UserId) && e.IsDeleted == false);
-            bool Postexists = _context.Posts.Any(e => e.PostId.Equals(share.PostId) && e.IsDeleted == false);
 
-            if (Userexists && Postexists)
+            try
             {
+                bool Userexists =  _context.Users.Any(e => e.UserId.Equals(share.UserId) && e.IsDeleted == false);
+                bool Postexists = _context.Posts.Any(e => e.PostId.Equals(share.PostId) && e.IsDeleted == false);
 
+                if (Userexists == false || Postexists == false)
+                {
+
+                    return null;
+
+                }
                 Share shares = new Share()
                 {
                     UserId = share.UserId,
@@ -83,14 +119,59 @@ namespace EFExample.Service
                 };
 
                 _context.Shares.Add(shares);
-                _context.SaveChanges();
 
-                return "successfully shared";
+                var ShareMail = from p in _context.Posts
+                                join s in _context.Shares on p.PostId equals s.PostId
+                                join u in _context.Users on p.PostUserId equals u.UserId
+                                where (p.PostId == share.PostId)
+                                select new
+                                {
+                                    Puserid = p.PostUserId,
+                                }
+                                into k
+                                join user in _context.Users on k.Puserid equals user.UserId
+                                select new
+                                {
+                                    PUser = user.Username,
+                                    pUserEmail = user.Email
+                                }
+                                into m
+                                join users in _context.Users on share.UserId equals users.UserId
+                                select new
+                                {
+                                    shareusername = users.Username,
+                                    PostUsername = m.PUser,
+                                    PostUserEmail = m.pUserEmail
+                                };
+
+
+                string ReceiverName = null;
+                string SenderName = null;
+                string ReceiverEmail = null;
+
+                foreach (var s in ShareMail)
+                {
+                    ReceiverName = s.PostUsername;
+                    SenderName = s.shareusername;
+                    ReceiverEmail = s.PostUserEmail;
+                };
+
+                _emailService.SendEmail( ReceiverEmail,"postShare" , SenderName , ReceiverName); 
+
+
+                await _context.SaveChangesAsync();
+
+
+
             }
-            else
+            catch (Exception ex)
             {
-                return null;
+
+                _logger.LogError(ex.Message);
+
+                return ex.Message;
             }
+            return "successfully shared";
         }
     }
 }

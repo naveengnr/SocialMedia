@@ -10,5 +10,6 @@
 
         public DateTime? DateShared { get; set; }
 
+        public string ErrorMessage { get; set; }
     }
 }

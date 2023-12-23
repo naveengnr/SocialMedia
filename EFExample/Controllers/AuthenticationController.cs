@@ -3,11 +3,7 @@ using EFExample.Models;
 using EFExample.Secutiy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+
 
 namespace EFExample.Controllers
 {
@@ -16,15 +12,15 @@ namespace EFExample.Controllers
     public class AuthenticationController:ControllerBase
     {
         public readonly SocialMediaContext _context;
-        public IConfiguration _configuration;
+        public JwtToken _jwt;
 
-        // public readonly JwtConfig _jwtConfig;
-
-        public AuthenticationController(SocialMediaContext context, IConfiguration configuration)
+        public AuthenticationController(
+            SocialMediaContext context,
+            JwtToken jwt
+        )
         {
             _context = context;
-            //_jwtConfig = jwtConfig;
-            _configuration = configuration;
+            _jwt = jwt;
         }
 
         [HttpPost("Authentication")]
@@ -42,7 +38,7 @@ namespace EFExample.Controllers
 
             if (Exists != null && password.Equals(authenticationDTO.Password))
             {
-                var token = GenerateJwtToken(Exists);
+                var token = _jwt.GenerateJwtToken(Exists);
 
                 return Ok(new AuthResult()
                 {
@@ -67,27 +63,29 @@ namespace EFExample.Controllers
 
             }
         }
-        private string GenerateJwtToken (User user)
-        {
-            var jwtTokenHandler = new JwtSecurityTokenHandler();
-            byte[] key = Encoding.UTF8.GetBytes(_configuration.GetSection("JwtConfig:Secret").Value);
 
-            var tokenDescriptor = new SecurityTokenDescriptor()
-            {
-                Subject = new System.Security.Claims.ClaimsIdentity(new[]
-                {
-                    new Claim(JwtRegisteredClaimNames.Sub, user.Username),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(JwtRegisteredClaimNames.Iat, DateTime.Now.ToUniversalTime().ToString())
-                }),
+        //public string GenerateJwtToken (User user)
+        //{
+        //    var jwtTokenHandler = new JwtSecurityTokenHandler();
+        //    byte[] key = Encoding.UTF8.GetBytes(_configuration.GetSection("JwtConfig:Secret").Value);
 
-                Expires = DateTime.Now.AddHours(1),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key) , SecurityAlgorithms.HmacSha256)
-            };
+        //    var tokenDescriptor = new SecurityTokenDescriptor()
+        //    {
+        //        Subject = new System.Security.Claims.ClaimsIdentity(new[]
+        //        {
+        //            new Claim(JwtRegisteredClaimNames.Sub, user.Username),
+        //            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        //            new Claim("UserId", user.UserId.ToString()),
+        //            new Claim(JwtRegisteredClaimNames.Iat, DateTime.Now.ToUniversalTime().ToString())
+        //        }),
 
-            var token = jwtTokenHandler.CreateToken(tokenDescriptor);
-            return  jwtTokenHandler.WriteToken(token);
+        //        Expires = DateTime.Now.AddHours(1),
+        //        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key) , SecurityAlgorithms.HmacSha256)
+        //    };
 
-        }
+        //    var token = jwtTokenHandler.CreateToken(tokenDescriptor);
+        //    return  jwtTokenHandler.WriteToken(token);
+
+        //}
     }
 }

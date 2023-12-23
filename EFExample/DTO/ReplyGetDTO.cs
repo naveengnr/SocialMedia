@@ -13,5 +13,7 @@
         public DateTime? DateReplied { get; set; }
 
         public int? ParentReplyId { get; set; }
+
+        public string ErrorMessage { get; set; }    
     }
 }

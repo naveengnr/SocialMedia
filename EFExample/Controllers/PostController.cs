@@ -3,12 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using EFExample.Models;
 using EFExample.DTO;
 using EFExample.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EFExample.Controllers
 {
-    
+
     [ApiController]
     [Route("api/[Controller]")]
+    [Authorize]
     public class PostController : ControllerBase
     {
         public readonly Ipost _post;
@@ -50,11 +52,11 @@ namespace EFExample.Controllers
         /// <response code="404">Returns when the user with the specified ID is not found.</response>
 
         [HttpGet("GetAllPosts")]
-        public ActionResult GetAllPosts(int PostId, int PostUserId)
+        public async Task<ActionResult> GetAllPosts(int PostId, int PostUserId)
         {
-            var posts = _post.GetPosts(PostId,PostUserId);
+            var posts = await _post.GetPosts(PostId, PostUserId);
 
-            if(posts != null)
+            if (posts != null)
             {
                 return Ok(posts);
             }
@@ -85,12 +87,22 @@ namespace EFExample.Controllers
         /// <response code="400">Returns when the input data is invalid or the request is malformed.</response>
         /// <response code="404">Returns when the user with the specified ID is not found.</response>
 
-    [HttpPut("UpdatePost")]
-        public ActionResult UpdatePost(PostUpdateDTO updateDTO)
+        [HttpPut("UpdatePost")]
+        public async Task<ActionResult> UpdatePost(PostUpdateDTO updateDTO)
         {
-            var post = _post.UpdatePost(updateDTO);
+            var UserId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "UserId");
 
-            if(post != null)
+            int Id = 0;
+
+            if (UserId != null)
+            {
+                Id = Convert.ToInt32(UserId.Value);
+            }
+
+
+            var post = await _post.UpdatePost(updateDTO, Id);
+
+            if (post != null)
             {
                 return Ok(post);
             }
@@ -119,11 +131,23 @@ namespace EFExample.Controllers
         /// <response code="400">Returns when the input data is invalid or the request is malformed.</response>
         /// <response code="404">Returns when the user with the specified ID is not found.</response>
 
-    [HttpPost("newPost")]
-        public ActionResult AddPost(PostDTO post)
+        [HttpPost("newPost")]
+        public async Task<IActionResult> AddPost(PostDTO post)
         {
-            
-            return Ok( _post.AddPost(post));
+
+
+            var UserId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "UserId");
+
+            int Id = 0;
+
+            if (UserId != null)
+            {
+                Id = Convert.ToInt32(UserId.Value);
+            }
+
+            var posts = await _post.AddPost(post, Id);
+
+            return Ok(posts);
         }
 
         [HttpGet("GetAllPostsContent")]
@@ -131,9 +155,34 @@ namespace EFExample.Controllers
         {
             var posts = _post.GetAllPostsContent();
 
-            if(posts != null)
+            if (posts != null)
             {
                 return Ok(posts);
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
+
+        /// <summary>
+        /// This Code is for GetAll Posts and Its Comments and Reply and ReplyReply 
+        /// </summary>
+        /// <remarks>
+        /// </remarks>
+        /// <returns>Returns an HTTP response indicating the result of the update operation.</returns>
+        /// <response code="200">Returns when the update operation is successful.</response>
+        /// <response code="400">Returns when the input data is invalid or the request is malformed.</response>
+        /// <response code="404">Returns when the user with the specified ID is not found.</response>
+        /// 
+
+        [HttpGet("GetPostsContent")]
+        public async Task<ActionResult> GetPostContent()
+        {
+            var post = await _post.Posts();
+            if (post != null)
+            {
+                return Ok(post);
             }
             else
             {

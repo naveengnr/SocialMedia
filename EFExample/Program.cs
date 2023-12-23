@@ -1,16 +1,17 @@
-using EFExample.Models;
+﻿using EFExample.Models;
 using EFExample.Service;
+using EFExample.Cache;
 using EFExample.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
-using Microsoft.AspNetCore.Identity;
+using Serilog;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Microsoft.Extensions.DependencyInjection;
 using EFExample.Secutiy;
 using Microsoft.OpenApi.Models;
-using EFExample.Interfaces;
+using EFExample.Email;
+using EFExample.Photos;
 
 internal class Program
 {
@@ -18,13 +19,14 @@ internal class Program
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+        builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
+
         // Add services to the container.
 
         builder.Services.AddDbContext<SocialMediaContext>(options => options.UseSqlServer(builder
-            .Configuration.GetConnectionString("DefaultConnection")));
-
+           .Configuration.GetConnectionString("DefaultConnection")));
         builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection("JwtConfig"));
-
+        builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
         builder.Services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -32,35 +34,60 @@ internal class Program
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 
         })
-        .AddJwtBearer(options =>
-            {
-                 byte[] key = Encoding.ASCII.GetBytes(builder.Configuration.GetSection("JwtConfig:Secret").Value);
-                options.SaveToken = true;
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuerSigningKey = true,
-                    ValidateLifetime = true
+     .AddJwtBearer(options =>
+     {
+         byte[] key = Encoding.ASCII.GetBytes(builder.Configuration.GetSection("JwtConfig:Secret").Value);
+         options.SaveToken = true;
+         options.TokenValidationParameters = new TokenValidationParameters
+         {
+             ValidateIssuer = false,
+             ValidateAudience = false,
+             IssuerSigningKey = new SymmetricSecurityKey(key),
+             ValidateIssuerSigningKey = true,
+             ValidateLifetime = true
+         };
+     })
+     .AddGoogle(options =>
+     {
+         options.ClientId = "878948281065-0mdb7f0quhtmbhemlpj1b8cti1tls4e9.apps.googleusercontent.com";
+         options.ClientSecret = "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";
+     });
 
-                };
-            });
 
-       // builder.Services.AddScoped<JwtConfig>();
+        // builder.Services.AddScoped<JwtConfig>();
 
- 
+        //    var logger = new LoggerConfiguration()
+        //.ReadFrom.Configuration(builder.Configuration)
+        //.Enrich.FromLogContext()
+        //.CreateLogger();
+        //    builder.Logging.ClearProviders();
+        //    builder.Logging.AddSerilog(logger);
+
 
         builder.Services.AddControllers();
-        builder.Services.AddScoped<Iuser , UserService>();
-        builder.Services.AddScoped<Ipost , PostService>();
-        builder.Services.AddScoped<Icomments , CommentService>();
-        builder.Services.AddScoped<Ishare , ShareService>();
-        builder.Services.AddScoped<Ireply , ReplyService>();
-        builder.Services.AddScoped<Ilikes , LikeService>();
-        builder.Services.AddScoped<Ifollower , FollowerService>();
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+        builder.Services.AddScoped<Iuser, UserService>();
+        builder.Services.AddScoped<Ipost, PostService>();
+        builder.Services.AddScoped<Icomments, CommentService>();
+        builder.Services.AddScoped<Ishare, ShareService>();
+        builder.Services.AddScoped<Ireply, ReplyService>();
+        builder.Services.AddScoped<Ilikes, LikeService>();
+        builder.Services.AddScoped<Ifollower, FollowerService>();
+        builder.Services.AddScoped<Ifriend, FriendService>();
+        builder.Services.AddScoped<EmailService>();
+        builder.Services.AddScoped<JwtToken>();
+        builder.Services.AddScoped<Icache, CacheService>();
         builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAll", builder =>            
+                builder
+                     .SetIsOriginAllowed(origin => true)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials());
+
+        });
+
         builder.Services.AddSwaggerGen(
             c =>
             {
@@ -71,7 +98,7 @@ internal class Program
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
                 {
                     Name = "Authorization",
-                    Type =SecuritySchemeType.ApiKey,
+                    Type = SecuritySchemeType.ApiKey,
                     Scheme = "Bearer",
                     BearerFormat = "JWT",
                     In = ParameterLocation.Header,
@@ -93,6 +120,8 @@ internal class Program
  });
             });
 
+
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -102,12 +131,15 @@ internal class Program
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "JWTAuthDemo v1"));
             //     c => c.SupportedSubmitMethods());
         }
+        app.UseSerilogRequestLogging();
 
         app.UseHttpsRedirection();
 
         app.UseAuthentication();
 
         app.UseAuthorization();
+
+        app.UseCors("AllowAll");
 
         app.MapControllers();
 

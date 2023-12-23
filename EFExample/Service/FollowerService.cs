@@ -20,37 +20,47 @@ namespace EFExample.Service
             var Users = _context.Followers.FirstOrDefault(e => e.UserId.Equals(follower.FollowingUserId));
             bool Exists = Users.FollowingUserId.Equals(follower.UserId);
             var Follower = _context.Followers.FirstOrDefault(e => e.UserId.Equals(follower.UserId));
+            bool UserExists = _context.Users.Any(e => e.UserId.Equals(follower.UserId));
+            bool FollowerExists = _context.Users.Any(e => e.UserId.Equals(follower.FollowingUserId));
 
-            if (Exists && Follower != null)
+            if (UserExists && FollowerExists)
             {
-                Users.FollowerUserId =follower.FollowingUserId;
-                Follower.FollowingUserId =  follower.UserId;
 
-                _context.SaveChanges();
+                if (Exists && Follower != null)
+                {
+                    Users.FollowerUserId = follower.FollowingUserId;
+                    Follower.FollowingUserId = follower.UserId;
 
-                return "Followed Successfully";
+                    _context.SaveChanges();
+
+                    return "Followed Successfully";
+                }
+                else
+                {
+
+                    Follower follower1 = new Follower()
+                    {
+                        UserId = follower.UserId,
+                        FollowingUserId = follower.FollowingUserId,
+                        DateFollowed = DateTime.Now
+                    };
+                    _context.Followers.Add(follower1);
+
+                    Follower follower2 = new Follower()
+                    {
+                        UserId = follower1.FollowingUserId,
+                        FollowerUserId = follower1.UserId,
+                        DateFollowed = DateTime.Now
+                    };
+                    _context.Followers.Add(follower2);
+                    _context.SaveChanges();
+
+                    return "Followed Successfully";
+                }
             }
             else
             {
-
-                Follower follower1 = new Follower()
-                {
-                    UserId = follower.UserId,
-                    FollowingUserId = follower.FollowingUserId,
-                    DateFollowed = DateTime.Now
-                };
-                _context.Followers.Add(follower1);
-
-                Follower follower2 = new Follower()
-                {
-                    UserId = follower1.FollowingUserId,
-                    FollowerUserId = follower1.UserId,
-                    DateFollowed = DateTime.Now
-                };
-                _context.Followers.Add(follower2);
-                _context.SaveChanges();
-
-                return "Followed Successfully";
+                return null;
             }
         }
     }

@@ -2,12 +2,14 @@
 using EFExample.Interfaces;
 using EFExample.Models;
 using EFExample.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EFExample.Controllers
 {
     [ApiController]
     [Route("api/[Controller]")]
+    [Authorize]
     public class ReplyController : ControllerBase
     {
         public readonly Ireply _reply;
@@ -38,12 +40,12 @@ namespace EFExample.Controllers
         /// <response code="404">Returns when the user with the specified ID is not found.</response>
 
         [HttpPut("UpdateReplies")]
-        public ActionResult UpdateReplies(ReplyUpdateDTO updateDTO)
+        public async Task<ActionResult> UpdateReplies(ReplyUpdateDTO updateDTO)
         {
-            var reply = _reply.UpdateReplies(updateDTO);
+            var reply = await _reply.UpdateReplies(updateDTO);
 
             if(reply != null)
-            {
+            { 
                 return Ok(reply);
             }
             else
@@ -53,7 +55,7 @@ namespace EFExample.Controllers
         }
 
         /// <summary>
-        /// This API is For Find ReplyDetails 
+        /// This API is For Find Reply based RewplyId parameter 
         /// </summary>
         /// <remarks>
         /// Sample Request :
@@ -75,11 +77,35 @@ namespace EFExample.Controllers
 
 
         [HttpGet("GetReplies")]
-        public ActionResult GetReplies(int ReplyId)
+        public async Task<ActionResult> GetReplies(int ReplyId)
         {
-            var reply = _reply.GetReplies(ReplyId);
+            var reply = await _reply.GetReplies(ReplyId);
 
             if(reply != null)
+            {
+                return Ok(reply);
+            }
+            else
+            {
+                return NotFound("id Not Found");
+            }
+        }
+
+        /// <summary>
+        /// This Code is for GetAllReplies
+        /// </summary>
+        /// <returns>Returns an HTTP response indicating the result of the update operation.</returns>
+        /// <response code="200">Returns when the update operation is successful.</response>
+        /// <response code="400">Returns when the input data is invalid or the request is malformed.</response>
+        /// <response code="404">Returns when the user with the specified ID is not found.</response>
+        /// 
+        [HttpGet("GetALLReplies")]
+        public async Task< ActionResult> GetRepliesAll()
+        {
+            int ReplyId = 0;
+            var reply = await _reply.GetReplies(ReplyId);
+
+            if (reply != null)
             {
                 return Ok(reply);
             }
@@ -124,10 +150,10 @@ namespace EFExample.Controllers
         /// <response code="400">Returns when the input data is invalid or the request is malformed.</response>
         /// <response code="404">Returns when the user with the specified ID is not found.</response>
 
-    [HttpPost("addReply")]
-        public ActionResult AddReply(ReplyDTO reply)
+        [HttpPost("addReply")]
+        public async Task<ActionResult> AddReply(ReplyDTO reply)
         {
-            var rep = _reply.AddReply(reply);
+            var rep = await _reply.AddReply(reply);
 
             if(rep != null)
             {

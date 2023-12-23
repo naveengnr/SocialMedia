@@ -2,6 +2,7 @@
 using EFExample.Interfaces;
 using EFExample.Models;
 using EFExample.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +10,7 @@ namespace EFExample.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ShareController : ControllerBase
     {
         public readonly Ishare _share;
@@ -44,7 +46,7 @@ namespace EFExample.Controllers
         /// <response code="404">Returns when the user with the specified ID is not found.</response>
 
         [HttpGet("GetShares")]
-        public ActionResult GetShare(int UserId = 0 ,int PostId = 0)
+        public async Task<ActionResult> GetShare(int UserId = 0 ,int PostId = 0)
         {
 
             if (UserId == 0 && PostId == 0)
@@ -52,7 +54,7 @@ namespace EFExample.Controllers
                 return BadRequest("You must provide either userId or postId.");
             }
 
-            var share = _share.GetShares( UserId, PostId);
+            var share = await _share.GetShares( UserId, PostId);
 
             if (share == null)
             {
@@ -84,9 +86,9 @@ namespace EFExample.Controllers
         /// <response code="404">Returns when the user with the specified ID is not found.</response>
 
         [HttpDelete("DeleteShare")]
-        public ActionResult DeleteShare(int ShareId)
+        public async Task<ActionResult> DeleteShare(int ShareId)
         {
-            var share = _share.DeleteShare(ShareId);
+            var share = await _share.DeleteShare(ShareId);
             if(share != null)
             {
                 return Ok(share);
@@ -120,9 +122,10 @@ namespace EFExample.Controllers
         /// <response code="404">Returns when the user with the specified ID is not found.</response>
 
         [HttpPost("addShare")]
-        public IActionResult Addshare(ShareDTO share)
+        [AllowAnonymous]
+        public async Task<ActionResult> Addshare(ShareDTO share)
         {
-            var shares = _share.AddShare(share);
+            var shares = await _share.AddShare(share);
 
             if(shares != null)
             {
@@ -131,7 +134,7 @@ namespace EFExample.Controllers
             }
             else
             {
-                return BadRequest("Post Or User Not Found");
+                return NotFound("Post Or User Not Found");
             }
         }
     }

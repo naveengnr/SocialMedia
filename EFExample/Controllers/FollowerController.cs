@@ -11,25 +11,26 @@ namespace EFExample.Controllers
     public class FollowerController : ControllerBase
     {
         public readonly Ifollower _follower;
-        public readonly SocialMediaContext _context;
 
-        public FollowerController (FollowerService service)
+
+        public FollowerController (Ifollower follower)
         {
-            _follower = service;
+            _follower = follower;
         }
+
+
         [HttpPost("addFollowing")]
         public ActionResult AddFollowing(FollowerDTO follower)
         {
-            bool UserExists = _context.Users.Any(e => e.UserId.Equals(follower.UserId));
-            bool FollowerExists = _context.Users.Any(e => e.UserId.Equals(follower.FollowingUserId));
+            var followers = _follower.AddFollowing(follower);
 
-            if(UserExists && FollowerExists)
+            if(followers != null)
             {
                 return Ok(_follower.AddFollowing(follower));
             }
             else
             {
-                return BadRequest("userid or followinguserid id not present");
+                return NotFound("userid or followinguserid id not present");
             }
         }
     }

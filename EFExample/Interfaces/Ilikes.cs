@@ -3,6 +3,6 @@ namespace EFExample.Interfaces
 {
     public interface Ilikes
     {
-        public string AddLikes(LikesDTO likesDto);
+        public  Task<string> AddLikes(LikesDTO likesDto);
     }
 }

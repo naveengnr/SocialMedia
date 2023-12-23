@@ -4,8 +4,8 @@ namespace EFExample.Interfaces
 {
     public interface Icomments
     {
-        public String AddComment(CommentDTO comment);
-        public List<CommentGetDTO> GetComments(int CommentId);
-        public string UpdateComment(CommentUpdateDTO updateDTO);
+        public Task<String> AddComment(CommentDTO comment);
+        public Task< List<CommentGetDTO> >GetComments(int CommentId);
+        public Task<string> UpdateComment(CommentUpdateDTO updateDTO);
     }
 }

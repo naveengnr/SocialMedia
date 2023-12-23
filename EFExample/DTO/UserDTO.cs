@@ -8,6 +8,8 @@
 
         public DateTime? DateOfBirth { get; set; }
 
+        public string AccountType { get; set; } = null!;
+
         public string? Password { get; set; }
 
     }

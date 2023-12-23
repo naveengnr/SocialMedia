@@ -11,7 +11,7 @@ public partial class Comment
 
     public int? PostId { get; set; }
 
-    public string? Content { get; set; }
+    public string? CommentContent { get; set; }
 
     public DateTime? DateCommented { get; set; }
 

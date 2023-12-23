@@ -11,7 +11,7 @@ public partial class Reply
 
     public int? CommentId { get; set; }
 
-    public string? Content { get; set; }
+    public string? ReplyContent { get; set; }
 
     public DateTime? DateReplied { get; set; }
 

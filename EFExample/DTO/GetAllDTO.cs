@@ -8,5 +8,7 @@
         public DateTime? DateOfBirth { get; set; }
         public DateTime? DateUserJoined { get; set; }
 
+        public string ErrorMessage { get; set; }
+
     }
 }

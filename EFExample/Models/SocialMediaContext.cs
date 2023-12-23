@@ -8,7 +8,6 @@ public partial class SocialMediaContext : DbContext
 {
     public SocialMediaContext()
     {
-
     }
 
     public SocialMediaContext(DbContextOptions<SocialMediaContext> options)
@@ -19,6 +18,8 @@ public partial class SocialMediaContext : DbContext
     public virtual DbSet<Comment> Comments { get; set; }
 
     public virtual DbSet<Follower> Followers { get; set; }
+
+    public virtual DbSet<Friend> Friends { get; set; }
 
     public virtual DbSet<Like> Likes { get; set; }
 
@@ -41,8 +42,8 @@ public partial class SocialMediaContext : DbContext
             entity.HasKey(e => e.CommentId).HasName("PK__Comments__C3B4DFAAB90D49B3");
 
             entity.Property(e => e.CommentId).HasColumnName("CommentID");
+            entity.Property(e => e.CommentContent).HasColumnType("text");
             entity.Property(e => e.CommentUserId).HasColumnName("CommentUserID");
-            entity.Property(e => e.Content).HasColumnType("text");
             entity.Property(e => e.DateCommented).HasColumnType("datetime");
             entity.Property(e => e.PostId).HasColumnName("PostID");
 
@@ -80,6 +81,21 @@ public partial class SocialMediaContext : DbContext
                 .HasConstraintName("FK__Follower__UserID__71D1E811");
         });
 
+        modelBuilder.Entity<Friend>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Friends__3214EC07102A3225");
+
+            entity.Property(e => e.RequestStatus)
+                .HasMaxLength(256)
+                .IsUnicode(false)
+                .HasDefaultValueSql("('Accepted')");
+
+            entity.HasOne(d => d.User).WithMany(p => p.Friends)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Friends__Followe__44CA3770");
+        });
+
         modelBuilder.Entity<Like>(entity =>
         {
             entity.HasKey(e => e.LikeId).HasName("PK__Likes__A2922CF4347DEBE9");
@@ -102,8 +118,8 @@ public partial class SocialMediaContext : DbContext
             entity.HasKey(e => e.PostId).HasName("PK__Posts__AA1260381B4319FD");
 
             entity.Property(e => e.PostId).HasColumnName("PostID");
-            entity.Property(e => e.Content).HasColumnType("text");
             entity.Property(e => e.DatePosted).HasColumnType("datetime");
+            entity.Property(e => e.PostContent).HasColumnType("text");
             entity.Property(e => e.PostUserId).HasColumnName("PostUserID");
 
             entity.HasOne(d => d.PostUser).WithMany(p => p.Posts)
@@ -117,11 +133,11 @@ public partial class SocialMediaContext : DbContext
 
             entity.Property(e => e.ReplyId).HasColumnName("ReplyID");
             entity.Property(e => e.CommentId).HasColumnName("CommentID");
-            entity.Property(e => e.Content).HasColumnType("text");
             entity.Property(e => e.DateReplied).HasColumnType("datetime");
             entity.Property(e => e.ParentReplyId)
                 .HasDefaultValueSql("((0))")
                 .HasColumnName("ParentReplyID");
+            entity.Property(e => e.ReplyContent).HasColumnType("text");
             entity.Property(e => e.UserId).HasColumnName("UserID");
 
             entity.HasOne(d => d.Comment).WithMany(p => p.Replies)
@@ -158,6 +174,10 @@ public partial class SocialMediaContext : DbContext
             entity.HasKey(e => e.UserId).HasName("PK__Users__1788CCACA6F26065");
 
             entity.Property(e => e.UserId).HasColumnName("UserID");
+            entity.Property(e => e.AccountType)
+                .HasMaxLength(256)
+                .IsUnicode(false)
+                .HasDefaultValueSql("('public')");
             entity.Property(e => e.DateOfBirth).HasColumnType("date");
             entity.Property(e => e.DateUserJoined).HasColumnType("datetime");
             entity.Property(e => e.Email)
@@ -166,6 +186,7 @@ public partial class SocialMediaContext : DbContext
             entity.Property(e => e.Password)
                 .HasMaxLength(255)
                 .IsUnicode(false);
+            entity.Property(e => e.ProfilePicture).HasColumnName("Profile_Picture");
             entity.Property(e => e.Username)
                 .HasMaxLength(255)
                 .IsUnicode(false);

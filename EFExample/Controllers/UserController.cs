@@ -5,39 +5,22 @@ using EFExample.DTO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using EFExample.Interfaces;
-
+using EFExample.Secutiy;
+using EFExample.Email;
+using Serilog;
 namespace EFExample.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UserController : ControllerBase
     {
         public readonly Iuser _iuser;
-
-        //public readonly SocialMediaContext _context;
-        public UserController(Iuser iuser)
+        public UserController(Iuser iuser )
         {
             _iuser = iuser;
-            //_context = context;
+
         }
-
-
-        //[HttpGet("GetAllUsers")]
-        //[AllowAnonymous]
-        //public IActionResult GetAllUsers()
-        //{
-        //    var u = _iuser.GetAllUsers();
-
-        //    if (u == null)
-        //    {
-        //        return NotFound("No data found");
-        //    }
-        //    else
-        //    {
-        //        return Ok(u);
-        //    }
-
-        //}
 
         /// <summary>
         /// This API is For Getting All User Details
@@ -48,10 +31,11 @@ namespace EFExample.Controllers
         /// <response code="404">Returns when the user with the specified ID is not found.</response>
 
         [HttpGet("GetAll")]
-        [Authorize]
-        public IActionResult GetAll()
+        
+        public async Task<IActionResult> GetAll()
         {
-            var user = _iuser.GetAll();
+           
+            var user = await _iuser.GetAll();
 
             if (user == null)
             {
@@ -82,11 +66,13 @@ namespace EFExample.Controllers
         /// <response code="200">Returns when the update operation is successful.</response>
         /// <response code="400">Returns when the input data is invalid or the request is malformed.</response>
         /// <response code="404">Returns when the user with the specified ID is not found.</response>
-        
+
         [HttpGet("GetById")]
-        public ActionResult GetById(int UserId)
+        public async Task<ActionResult> GetById(int UserId)
         {
-            var users = _iuser.GetById(UserId);
+
+        
+            var users = await _iuser.GetById(UserId);
 
             if(users != null)
             {
@@ -119,9 +105,18 @@ namespace EFExample.Controllers
         /// <response code="404">Returns when the user with the specified ID is not found.</response>
         
         [HttpDelete]
-        public ActionResult DeleteUser(int UserId)
+       
+        public async Task<ActionResult> DeleteUser(int UserId)
         {
-            var users = _iuser.DeleteUser(UserId);
+            var UsersId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "UserId");
+
+            int Id = 0;
+
+            if (UserId != null)
+            {
+                Id = Convert.ToInt32(UsersId.Value);
+            }
+            var users = await _iuser.DeleteUser(UserId , Id);
 
             if(users != null)
             {
@@ -154,9 +149,9 @@ namespace EFExample.Controllers
         /// <response code="404">Returns when the user with the specified ID is not found.</response>
         
         [HttpGet("GetByName")]
-        public ActionResult GetByName(string Username)
+        public async Task<ActionResult> GetByName(string Username)
         {
-            var users = _iuser.GetByName(Username);
+            var users = await _iuser.GetByName(Username);
 
             if (users != null)
             {
@@ -206,19 +201,30 @@ namespace EFExample.Controllers
         /// <response code="404">Returns when the user with the specified ID is not found.</response>
 
         [HttpPut("updateById")]
-        public ActionResult UpdateById(UserUpdateDTO updateDTO)
+       
+        public async Task<ActionResult> UpdateById(UserUpdateDTO updateDTO)
         {
-            var users = _iuser.UpdateById(updateDTO);
+            var UserId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "UserId");
 
-            if(users == null)
+            int Id = 0;
+
+            if (UserId != null)
             {
-                return NotFound("user not found");
+                Id = Convert.ToInt32(UserId.Value);
+            }
+
+            var result = await _iuser.UpdateById(updateDTO , Id);
+
+            if (result != null)
+            {
+                return Ok(result);
             }
             else
             {
-                return Ok(users);
+                return NotFound("User not found or update failed");
             }
         }
+
 
 
         /// <summary>
@@ -243,11 +249,48 @@ namespace EFExample.Controllers
         /// <response code="200">Returns when the update operation is successful.</response>
         /// <response code="400">Returns when the input data is invalid or the request is malformed.</response>
         /// <response code="404">Returns when the user with the specified ID is not found.</response>
-        
+
         [HttpPost("newUser")]
-        public ActionResult newUser(UserDTO user)
+        [AllowAnonymous]
+        public async Task<ActionResult> newUser(UserDTO user)
         {
-            return Ok(_iuser.newUser(user));
+            return Ok(await _iuser.newUser(user));
+        }
+
+        [HttpPost("ProfilePicture")]
+        public ActionResult AddProfilePicture(int UserId, IFormFile profilePicture)
+        {
+            if (profilePicture == null || profilePicture.Length == 0)
+            {
+                return BadRequest("No file uploaded.");
+            }
+            var profile = _iuser.AddProfilePicture(UserId, profilePicture);
+
+            if (profile == null)
+            {
+                return NotFound("User NotFound");
+            }
+            else
+            {
+                return Ok(profile);
+            }
+        }
+        [HttpGet("ProfilePic")]
+        [Produces("application/octet-stream")]
+        //[Produces("image/png")]
+        [AllowAnonymous]
+        public ActionResult GetProfilePic(int UserId)
+        {
+            var profile = _iuser.GetProfilePictureByUserId(UserId);
+            if(profile == null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                return File(profile, "application/octet-stream");
+            }
         }
     }
 }
+

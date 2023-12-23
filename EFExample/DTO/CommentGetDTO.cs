@@ -11,5 +11,7 @@
         public string? Content { get; set; }
 
         public DateTime? DateCommented { get; set; }
+
+        public string EroorMessage { get; set; }    
     }
 }

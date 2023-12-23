@@ -19,6 +19,10 @@ public partial class User
 
     public bool IsDeleted { get; set; }
 
+    public byte[]? ProfilePicture { get; set; }
+
+    public string AccountType { get; set; } = null!;
+
     public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
 
     public virtual ICollection<Follower> FollowerFollowerUsers { get; set; } = new List<Follower>();
@@ -26,6 +30,8 @@ public partial class User
     public virtual ICollection<Follower> FollowerFollowingUsers { get; set; } = new List<Follower>();
 
     public virtual ICollection<Follower> FollowerUsers { get; set; } = new List<Follower>();
+
+    public virtual ICollection<Friend> Friends { get; set; } = new List<Friend>();
 
     public virtual ICollection<Like> Likes { get; set; } = new List<Like>();
 

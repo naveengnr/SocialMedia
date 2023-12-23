@@ -6,8 +6,9 @@ namespace EFExample.Interfaces
     public interface Ipost
     {
         public List<PostAllDetailsDTO> GetAllPostsContent();
-        public string AddPost(PostDTO post);
-        public List<PostGetDTO> GetPosts(int PostId , int PostUserId);
-        public string UpdatePost(PostUpdateDTO updateDTO);
+        public Task<string> AddPost(PostDTO post , int Id);
+        public Task<List<PostGetDTO>> GetPosts(int PostId , int PostUserId);
+        public Task<string> UpdatePost(PostUpdateDTO updateDTO,int Id);
+        public Task<IQueryable<PostContentDTO>> Posts();
     }
 }

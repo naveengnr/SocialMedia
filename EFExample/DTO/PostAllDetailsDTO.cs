@@ -10,5 +10,18 @@
         public int CommentLikesCount { get; set; }
         public int ReplyLikesCount { get; set; }
 
+        public List<CommentList> CommentList { get; set; }
+
+}
+
+    public class CommentList
+    {
+        public string? CommentContent { get; set; }
+        public string? ReplytContent { get; set; }
+        public int Commentid { get; set; }
+        public int commentuserid { get; set; }
+      
     }
+
+
 }
